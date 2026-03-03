@@ -1,52 +1,30 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Café Admin</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-
-<style>
-body{background:#1a1a1a;color:white;text-align:center;font-family:sans-serif;}
-h1{color:#c8a96a;}
-.token{font-size:80px;margin:20px;color:#c8a96a;}
-button{width:80px;height:70px;margin:5px;font-size:24px;border:none;border-radius:10px;background:#333;color:white;}
-button:hover{background:#c8a96a;color:black;}
-.plus{width:160px;background:#2e7d32;}
-.minus{width:160px;background:#444;}
-.reset{width:160px;background:#8b0000;}
-</style>
-</head>
-<body>
-
-<h1>CAFÉ ADMIN</h1>
-<div class="token" id="token">0</div>
-<div id="pad"></div>
-<br>
-<button class="plus" onclick="plus()">+1</button>
-<button class="minus" onclick="minus()">-1</button>
-<button class="reset" onclick="reset()">Reset</button>
-
 <script>
-const supabase = supabase.createClient(
+const client = supabase.createClient(
   "https://lwbtaesxmgbtdhtbjthd.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3YnRhZXN4bWdidGRodGJqdGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDc0MDgsImV4cCI6MjA4ODEyMzQwOH0.DdSIWECENX4Hh05rCwBmFELIzbJlWEoRQXSFw9lv_fU"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3YnRhZXN4bWdidGRodGJqdGhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDc0MDgsImV4cCI6MjA4ODEyMzQwOH0.DdSIWECENX4Hh05rCwBmFELIzbJlWEoRQXSFw9lv_fU"
 );
 
 let value="";
 
+/* Build numpad */
 for(let i=1;i<=9;i++){
-  document.getElementById("pad").innerHTML += `<button onclick="add(${i})">${i}</button>`;
+  document.getElementById("pad").innerHTML += 
+    `<button onclick="add(${i})">${i}</button>`;
   if(i%3==0) document.getElementById("pad").innerHTML += "<br>";
 }
-document.getElementById("pad").innerHTML += `<button onclick="add(0)">0</button>`;
+document.getElementById("pad").innerHTML += 
+  `<button onclick="add(0)">0</button>`;
 
 function updateDisplay(val){
   document.getElementById("token").innerText = val;
 }
 
 async function fetchToken(){
-  const { data } = await supabase.from('token').select().eq('id',1).single();
-  updateDisplay(data.value);
+  const { data } = await client.from('token')
+    .select()
+    .eq('id',1)
+    .single();
+  if(data) updateDisplay(data.value);
 }
 fetchToken();
 
@@ -56,18 +34,26 @@ function add(n){
 }
 
 async function setToken(v){
-  await supabase.from('token').update({value:v}).eq('id',1);
+  await client.from('token')
+    .update({value:v})
+    .eq('id',1);
   value=v.toString();
 }
 
 async function plus(){
-  const { data } = await supabase.from('token').select().eq('id',1).single();
-  setToken(data.value+1);
+  const { data } = await client.from('token')
+    .select()
+    .eq('id',1)
+    .single();
+  if(data) setToken(data.value+1);
 }
 
 async function minus(){
-  const { data } = await supabase.from('token').select().eq('id',1).single();
-  if(data.value>0) setToken(data.value-1);
+  const { data } = await client.from('token')
+    .select()
+    .eq('id',1)
+    .single();
+  if(data && data.value>0) setToken(data.value-1);
 }
 
 async function reset(){
@@ -75,12 +61,12 @@ async function reset(){
   setToken(0);
 }
 
-supabase.channel('realtime')
-  .on('postgres_changes',{event:'UPDATE',schema:'public',table:'token'},payload=>{
-    updateDisplay(payload.new.value);
-  })
+client.channel('realtime')
+  .on('postgres_changes',
+    {event:'UPDATE',schema:'public',table:'token'},
+    payload=>{
+      updateDisplay(payload.new.value);
+    }
+  )
   .subscribe();
 </script>
-
-</body>
-</html>
